@@ -14,3 +14,21 @@ export function isData(val: any): val is Date {
 export function isPlainObject(val: any): val is Object {
   return toString.call(val) === '[object Object]'
 }
+
+/**
+ * 将axios函数和axios类混合, 将axios类上的属性全部拷贝到axios函数原型上
+ *
+ * @export
+ * @template T
+ * @template U
+ * @param {T} to 拷贝到的axios函数
+ * @param {U} from 被拷贝属性的axios类实例
+ * @returns {(T & U)}
+ */
+export function extend<T, U>(to: T, from: U): T & U {
+  for (const key in from) {
+    ;(to as T & U)[key] = from[key] as any
+  }
+
+  return to as T & U
+}
