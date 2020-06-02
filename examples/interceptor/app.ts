@@ -25,7 +25,6 @@ axios.interceptors.response.use(res => {
   res.data += '3'
   return res
 })
-
 axios.interceptors.response.eject(interceptor)
 
 axios({
@@ -34,6 +33,6 @@ axios({
   headers: {
     test: ''
   }
-}).then((res) => {
+}).then(res => {
   console.log(res.data)
 })

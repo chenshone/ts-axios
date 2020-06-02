@@ -1,4 +1,5 @@
-import { isPlainObject } from './util'
+import { isPlainObject, deepMerge } from './util'
+import { Method } from '../types'
 
 /**
  *
@@ -65,4 +66,30 @@ export function parseHeaders(headers: string): any {
   })
 
   return parsed
+}
+
+/**
+ *将config中的headers字段中的属性，根据不同的method，提取出来
+ *
+ * @export
+ * @param {*} headers
+ * @param {Method} method
+ * @returns {*}
+ */
+export function flattenHeaders(headers: any, method: Method): any {
+  if (!headers) {
+    return headers
+  }
+
+  // 在这里 headers最后一个传入，可以确保之前在header上的属性，不会被common和 [method] 中的属性所覆盖
+  // 也就是说 headers > [method] > common
+  headers = deepMerge(headers.common, headers[method], headers)
+
+  const methodsToDelete = ['get', 'post', 'put', 'delete', 'patch', 'head', 'options', 'common']
+
+  methodsToDelete.forEach(method => {
+    delete headers[method]
+  })
+
+  return headers
 }
