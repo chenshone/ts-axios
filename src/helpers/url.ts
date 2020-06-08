@@ -1,4 +1,4 @@
-import { isData, isPlainObject } from './util'
+import { isData, isPlainObject, isURLSearchParams } from './util'
 
 interface URLOrigin {
   protocol: string
@@ -16,42 +16,54 @@ function encode(val: string): string {
     .replace(/%5D/gi, ']')
 }
 
-export function buildURL(url: string, params?: any): string {
+export function buildURL(
+  url: string,
+  params?: any,
+  paramsSerializer?: (params: any) => string
+): string {
   if (!params) {
     return url
   }
 
-  // 键值对数组，存放params，用于最后的url拼接
-  const parts: string[] = []
+  let serializedParams
 
-  Object.keys(params).forEach(key => {
-    const val = params[key]
+  if (paramsSerializer) {
+    serializedParams = paramsSerializer(params)
+  } else if (isURLSearchParams(params)) {
+    serializedParams = params.toString()
+  } else {
+    // 键值对数组，存放params，用于最后的url拼接
+    const parts: string[] = []
 
-    // 如果值为空或者undefined 直接忽略
-    if (val === null || typeof val === 'undefined') {
-      return
-    }
+    Object.keys(params).forEach(key => {
+      const val = params[key]
 
-    // 给的值可能是数组类型，所以把不是数组是也变成数组，统一
-    let values = []
-    if (Array.isArray(val)) {
-      values = val
-      key += '[]' // 表示值为数组
-    } else {
-      values = [val]
-    }
-
-    values.forEach(val => {
-      if (isData(val)) {
-        val = val.toISOString()
-      } else if (isPlainObject(val)) {
-        val = JSON.stringify(val)
+      // 如果值为空或者undefined 直接忽略
+      if (val === null || typeof val === 'undefined') {
+        return
       }
-      parts.push(`${encode(key)}=${encode(val)}`)
-    })
-  })
 
-  let serializedParams = parts.join('&')
+      // 给的值可能是数组类型，所以把不是数组是也变成数组，统一
+      let values = []
+      if (Array.isArray(val)) {
+        values = val
+        key += '[]' // 表示值为数组
+      } else {
+        values = [val]
+      }
+
+      values.forEach(val => {
+        if (isData(val)) {
+          val = val.toISOString()
+        } else if (isPlainObject(val)) {
+          val = JSON.stringify(val)
+        }
+        parts.push(`${encode(key)}=${encode(val)}`)
+      })
+    })
+
+    serializedParams = parts.join('&')
+  }
 
   if (serializedParams) {
     // 需要忽略哈希标识后面的内容
@@ -67,6 +79,13 @@ export function buildURL(url: string, params?: any): string {
   return url
 }
 
+export function isAbsoluteURL(url: string): boolean {
+  return /(^[a-z][a-z\d\+\-\.]*:)?\/\//i.test(url)
+}
+
+export function combineURL(baseURL: string, relativeURL?: string): string {
+  return relativeURL ? baseURL.replace(/\/+$/, '') + '/' + relativeURL.replace(/^\/+/, '') : baseURL
+}
 /**
  *判断是否是同源请求
  *
